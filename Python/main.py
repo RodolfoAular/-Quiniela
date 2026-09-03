@@ -182,10 +182,10 @@ def actualizar_resultado_partido(
             detail = "No se puede finalizar un partido sin equipos definidos"
         )
     
-    Resultado_Partido = [-1,0,1]
+    Resultado_Partido = [-1,0,1,2]
     if resultado.winner not in Resultado_Partido:
         raise HTTPException(
-        status_code=400,
+        status_code = 400,
         detail="Winner inválido"
         )
 

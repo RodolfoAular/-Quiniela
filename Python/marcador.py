@@ -88,7 +88,9 @@ def cerrar_partido(
 
 def administrar_partido(db, partido, datos):
 
-    if datos.fecha_hora:
+    estado_finalizado_anterior = partido.finalizado
+
+    if datos.fecha_hora is not None:
         partido.fecha_hora = datos.fecha_hora
 
 
@@ -107,8 +109,12 @@ def administrar_partido(db, partido, datos):
     if datos.winner is not None:
         partido.winner = datos.winner
 
-    if datos.finalizado is True:
+    acaba_de_finalizar = (estado_finalizado_anterior is not True and partido.finalizado is True)
+
+    if acaba_de_finalizar:
+        if partido.goles_local is None or partido.goles_visitante is None: raise ValueError ("No hay goles registrados")
         cerrar_partido(db, partido, partido.goles_local, partido.goles_visitante, partido.finalizado)
 
-    if datos.finalizado is False:    
-        db.commit()
+    else: db.commit(), db.refresh(partido)
+
+    return partido

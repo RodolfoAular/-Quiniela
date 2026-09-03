@@ -28,6 +28,7 @@ class PartidoBase(BaseModel):
     equipo_visitante_id: Optional[int] = None
     fecha_hora: datetime
     fase: str
+    winner: int = 0
 
     promiedos_id: Optional[str] = None
 
