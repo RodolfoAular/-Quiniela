@@ -121,15 +121,7 @@ def Actualizacion_Periodica(db: Session):
      
                 partido.finalizado = datos["finalizado"]
 
-                cerrar_partido(
-                    db,
-                    partido,
-                    datos["goles_local"],
-                    datos["goles_visitante"],
-                   # datos["fecha_hora"],
-                    datos["finalizado"]
-                   # datos["winner"]
-                )
+                cerrar_partido(db, partido)
 
             continue
 
@@ -181,8 +173,6 @@ def Actualizacion_Periodica(db: Session):
             winner = datos["winner"]
 
         )
-
-        
 
         db.add(nuevo_partido)
 

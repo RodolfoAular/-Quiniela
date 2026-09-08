@@ -40,7 +40,7 @@ class UpdatePartidoAdmin(BaseModel):
     goles_local: Optional[int] = Field(default = None, ge=0)
     goles_visitante: Optional[int] = Field(default = None, ge=0)
     fecha_hora: Optional[datetime] = None
-    winner: Optional[int] = None 
+    winner: Optional[int] = Field(default = None, ge = -1, le = 2)
     fase: Optional[str] = None
     finalizado: Optional[bool] = None
 

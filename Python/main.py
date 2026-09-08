@@ -156,49 +156,49 @@ def crear_pronostico(pronostico: schemas.PronosticoCreate, db: Session = Depends
 
 
 
-@app.put("/partidos/{partido_id}/resultado", response_model=schemas.Partido, tags = ["Partidos"])
-def actualizar_resultado_partido(
-    partido_id: int,
-    resultado: schemas.UpdatePartidoAdmin,
-    admin_id: int,
-    db: Session = Depends(get_db)
-):
-    admin = db.query(models.Usuario).filter(models.Usuario.id == admin_id).first()
-    if not admin or not admin.es_admin:
-        raise HTTPException(
-            status_code = 403,
-            detail = "No tienes permisos de administrador para realizar esta acción"
-        )
+# @app.put("/partidos/{partido_id}/resultado", response_model=schemas.Partido, tags = ["Partidos"])
+# def actualizar_resultado_partido(
+#     partido_id: int,
+#     resultado: schemas.UpdatePartidoAdmin,
+#     admin_id: int,
+#     db: Session = Depends(get_db)
+# ):
+#     admin = db.query(models.Usuario).filter(models.Usuario.id == admin_id).first()
+#     if not admin or not admin.es_admin:
+#         raise HTTPException(
+#             status_code = 403,
+#             detail = "No tienes permisos de administrador para realizar esta acción"
+#         )
 
-    partido = db.query(models.Partido).filter(models.Partido.id == partido_id).first()
-    if not partido:
-        raise HTTPException(status_code = 404, detail="Partido no encontrado")
+#     partido = db.query(models.Partido).filter(models.Partido.id == partido_id).first()
+#     if not partido:
+#         raise HTTPException(status_code = 404, detail="Partido no encontrado")
 
 
-    # Para cerrar partido, ambos equipos deben estar definidos
-    if partido.equipo_local_id is None or partido.equipo_visitante_id is None:
-        raise HTTPException(
-            status_code = 400,
-            detail = "No se puede finalizar un partido sin equipos definidos"
-        )
+#     # Para cerrar partido, ambos equipos deben estar definidos
+#     if partido.equipo_local_id is None or partido.equipo_visitante_id is None:
+#         raise HTTPException(
+#             status_code = 400,
+#             detail = "No se puede finalizar un partido sin equipos definidos"
+#         )
     
-    Resultado_Partido = [-1,0,1,2]
-    if resultado.winner not in Resultado_Partido:
-        raise HTTPException(
-        status_code = 400,
-        detail="Winner inválido"
-        )
+#     Resultado_Partido = [-1,0,1,2]
+#     if resultado.winner not in Resultado_Partido:
+#         raise HTTPException(
+#         status_code = 400,
+#         detail="Winner inválido"
+#         )
 
-    return cerrar_partido(
-    db,
-    partido,
-    resultado.goles_local,
-    resultado.goles_visitante,
-    #resultado.fecha_hora,
-    #resultado.finalizado,
-    resultado.winner
+#     return cerrar_partido(
+#     db,
+#     partido,
+#     resultado.goles_local,
+#     resultado.goles_visitante,
+#     #resultado.fecha_hora,
+#     #resultado.finalizado,
+#     resultado.winner
 
-    )
+#     )
     
 
 @app.post("/auditar-promiedos", tags=["Promiedos"])
@@ -246,13 +246,22 @@ scheduler.add_job(
 )
 scheduler.start()
 
-@app.put("/admin/partido/{partido_id}")
+@app.put("/admin/partido/{partido_id}", response_model=schemas.Partido)
 def modificar_partido(
     partido_id: int,
+    admin_id: int,
     datos: schemas.UpdatePartidoAdmin,
     db: Session = Depends(get_db)
 ):
 
+    admin = db.query(models.Usuario).filter(
+    models.Usuario.id == admin_id,
+    models.Usuario.es_admin == True
+    ).first()
+    
+    if not admin:
+        raise HTTPException(status_code = 403, detail = "No autorizado")
+    
     partido = db.query(models.Partido).filter(
         models.Partido.id == partido_id
     ).first()
@@ -263,7 +272,7 @@ def modificar_partido(
     
     administrar_partido(db, partido, datos)
 
-    return {"mensaje": "Partido actualizado"}
+    return partido
 
 @app.put("/cambio-modo")
 def cambio_modo(
@@ -284,7 +293,7 @@ def cambio_modo(
         permisos = db.query(models.PermisosAdmin).first()
 
         if permisos is None:
-                
+        
             permisos = models.PermisosAdmin(actualizacion_automatica = datos.actualizacion_automatica)
         else:
 

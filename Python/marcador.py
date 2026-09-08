@@ -1,27 +1,14 @@
 import models
 
-def cerrar_partido(
-    db,
-    partido,
-    goles_local,
-    goles_visitante,
-#   fecha_hora,
-   finalizado,
-#    winner,
+def cerrar_partido(db, partido):
+   
     
-    
-):
-    partido.goles_local = goles_local
-    partido.goles_visitante = goles_visitante
-  # partido.fecha_hora = fecha_hora
-    partido.finalizado = finalizado
- #   partido.winner = winner
-    
-
     if partido.finalizado:
         pronosticos = db.query(models.Pronostico).filter(
-            models.Pronostico.partido_id == partido.id
-        ).all()
+            models.Pronostico.partido_id == partido.id).all()
+        
+        if partido.goles_local is None or partido.goles_visitante is None:
+            raise ValueError("No hay goles registrados")
 
         resultado_real = "empate"
         if partido.goles_local > partido.goles_visitante:
@@ -30,6 +17,7 @@ def cerrar_partido(
             resultado_real = "visitante"
 
         for pronostico in pronosticos:
+            pronostico.usuario.puntos_totales -= pronostico.puntos_obtenidos
             puntos_ganados = 0
 
             resultado_pronostico = "empate"
@@ -46,9 +34,8 @@ def cerrar_partido(
             elif resultado_pronostico == resultado_real:
                 puntos_ganados = 1
 
-            if puntos_ganados > 0:
-                pronostico.puntos_obtenidos = puntos_ganados
-                pronostico.usuario.puntos_totales += puntos_ganados
+            pronostico.puntos_obtenidos = puntos_ganados
+            pronostico.usuario.puntos_totales += puntos_ganados
 
         # Propagación a slots SOLO cuando el partido está finalizado
         ganador_id = None
@@ -89,6 +76,8 @@ def cerrar_partido(
 def administrar_partido(db, partido, datos):
 
     estado_finalizado_anterior = partido.finalizado
+    goles_local_anterior = partido.goles_local
+    goles_visitante_anterior = partido.goles_visitante
 
     if datos.fecha_hora is not None:
         partido.fecha_hora = datos.fecha_hora
@@ -101,6 +90,8 @@ def administrar_partido(db, partido, datos):
     if datos.goles_visitante is not None:
         partido.goles_visitante = datos.goles_visitante
 
+    if datos.fase is not None:
+        partido.fase = datos.fase
 
     if datos.finalizado is not None:
         partido.finalizado = datos.finalizado
@@ -109,11 +100,11 @@ def administrar_partido(db, partido, datos):
     if datos.winner is not None:
         partido.winner = datos.winner
 
-    acaba_de_finalizar = (estado_finalizado_anterior is not True and partido.finalizado is True)
+    acaba_de_finalizar = (partido.finalizado is True and (estado_finalizado_anterior is not True or (goles_local_anterior != partido.goles_local or goles_visitante_anterior != partido.goles_visitante)))
 
     if acaba_de_finalizar:
         if partido.goles_local is None or partido.goles_visitante is None: raise ValueError ("No hay goles registrados")
-        cerrar_partido(db, partido, partido.goles_local, partido.goles_visitante, partido.finalizado)
+        cerrar_partido(db, partido)
 
     else: db.commit(), db.refresh(partido)
 
